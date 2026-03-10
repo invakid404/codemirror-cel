@@ -208,8 +208,8 @@ impl CelAnalyzer {
             lsp::to_diagnostics(&state.errors, state.check_errors(), &state.line_index);
         self.documents.insert(uri.to_string(), state);
 
-        // Return a publishDiagnostics notification
-        self.diagnostics_notification(uri, &diagnostics)
+        // Return a publishDiagnostics notification (with version so the client clears stale diagnostics)
+        self.diagnostics_notification(uri, version, &diagnostics)
     }
 
     /// Handle `textDocument/didChange`.
@@ -234,7 +234,7 @@ impl CelAnalyzer {
             lsp::to_diagnostics(&state.errors, state.check_errors(), &state.line_index);
         self.documents.insert(uri.to_string(), state);
 
-        self.diagnostics_notification(uri, &diagnostics)
+        self.diagnostics_notification(uri, version, &diagnostics)
     }
 
     /// Handle `textDocument/completion`.
@@ -348,12 +348,23 @@ impl CelAnalyzer {
     }
 
     /// Build a publishDiagnostics notification JSON string.
-    fn diagnostics_notification(&self, uri: &str, diagnostics: &[Diagnostic]) -> String {
+    ///
+    /// The `version` field is critical: the CM LSP client only calls
+    /// `clearDiagnostics()` when `params.version != null`. Without it,
+    /// empty diagnostic arrays don't clear stale errors because
+    /// `addDiagnostics([])` returns early.
+    fn diagnostics_notification(
+        &self,
+        uri: &str,
+        version: i32,
+        diagnostics: &[Diagnostic],
+    ) -> String {
         let notification = serde_json::json!({
             "jsonrpc": "2.0",
             "method": "textDocument/publishDiagnostics",
             "params": {
                 "uri": uri,
+                "version": version,
                 "diagnostics": diagnostics,
             },
         });

@@ -9,7 +9,9 @@
     "check": "bunx tsc --noEmit"
   },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@playwright/test": "^1.58.2",
+    "@types/bun": "latest",
+    "playwright": "^1.58.2"
   },
   "peerDependencies": {
     "typescript": "^5"
