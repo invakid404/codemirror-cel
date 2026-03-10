@@ -1,7 +1,7 @@
 import index from "./index.html";
 
 const wasmPath = new URL(
-  "../crates/celsp-wasm/pkg/celsp_wasm_bg.wasm",
+  "../crates/celsp/pkg/celsp_bg.wasm",
   import.meta.url,
 ).pathname;
 
@@ -22,8 +22,8 @@ Bun.serve({
         headers: { "Content-Type": "application/javascript" },
       }),
     // The bundled worker's init() resolves the WASM path relative to
-    // import.meta.url (/worker.js), so it fetches /celsp_wasm_bg.wasm.
-    "/celsp_wasm_bg.wasm": () =>
+    // import.meta.url (/worker.js), so it fetches /celsp_bg.wasm.
+    "/celsp_bg.wasm": () =>
       new Response(Bun.file(wasmPath), {
         headers: { "Content-Type": "application/wasm" },
       }),

@@ -5,7 +5,7 @@
  * delegates them to the CelAnalyzer WASM module, and sends responses back.
  */
 
-import init, { CelAnalyzer } from "../crates/celsp-wasm/pkg/celsp_wasm.js";
+import init, { CelAnalyzer } from "../crates/celsp/pkg/celsp.js";
 
 let analyzer: CelAnalyzer | null = null;
 

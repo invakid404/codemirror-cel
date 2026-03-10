@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "demo": "bun --hot demo/serve.ts",
-    "build:wasm": "wasm-pack build --target web --release crates/celsp-wasm && wasm-opt --all-features -Oz crates/celsp-wasm/pkg/celsp_wasm_bg.wasm -o crates/celsp-wasm/pkg/celsp_wasm_bg.wasm",
+    "build:wasm": "wasm-pack build --target web --release crates/celsp && wasm-opt --all-features -Oz crates/celsp/pkg/celsp_bg.wasm -o crates/celsp/pkg/celsp_bg.wasm",
     "check": "bunx tsc --noEmit"
   },
   "dependencies": {
