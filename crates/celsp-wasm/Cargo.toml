@@ -15,6 +15,12 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 wasm-bindgen = "0.2"
 
+[package.metadata.wasm-pack.profile.release]
+# wasm-pack's wasm-opt invocation doesn't pass --all-features, but Rust now
+# emits bulk-memory instructions by default. We disable wasm-pack's wasm-opt
+# and run it manually in the build script.
+wasm-opt = false
+
 [profile.release]
 opt-level = "z"
 lto = true
