@@ -1,9 +1,9 @@
 /**
  * Semantic token highlighting for CEL.
  *
- * Requests semantic tokens from the celsp WASM worker and applies
- * CodeMirror Decorations directly — bypassing the LSP client which
- * doesn't support semantic tokens.
+ * Listens for `celsp/semanticTokens` notifications pushed by the worker
+ * (sent proactively after didOpen/didChange) and applies CodeMirror
+ * Decorations — bypassing the LSP client which doesn't support semantic tokens.
  */
 
 import {
@@ -33,11 +33,31 @@ const TOKEN_CLASSES: Record<number, string> = {
 // ─── State management ──────────────────────────────────────────────────────
 
 interface SemanticTokenData {
-  delta_line: number;
-  delta_start: number;
+  deltaLine: number;
+  deltaStart: number;
   length: number;
-  token_type: number;
-  token_modifiers_bitset: number;
+  tokenType: number;
+  tokenModifiersBitset: number;
+}
+
+/**
+ * Decode the flat u32[] wire format into structured token objects.
+ *
+ * lsp_types serializes SemanticTokens.data as a flat sequence of u32
+ * values (groups of 5): [deltaLine, deltaStart, length, tokenType, modifiers, ...]
+ */
+function decodeTokenData(data: number[]): SemanticTokenData[] {
+  const tokens: SemanticTokenData[] = [];
+  for (let i = 0; i + 4 < data.length; i += 5) {
+    tokens.push({
+      deltaLine: data[i]!,
+      deltaStart: data[i + 1]!,
+      length: data[i + 2]!,
+      tokenType: data[i + 3]!,
+      tokenModifiersBitset: data[i + 4]!,
+    });
+  }
+  return tokens;
 }
 
 const setTokens = StateEffect.define<DecorationSet>();
@@ -61,7 +81,7 @@ const tokenDecorations = StateField.define<DecorationSet>({
 
 function buildDecorations(
   tokens: SemanticTokenData[],
-  doc: { lineAt(n: number): { from: number }; line(n: number): { from: number } },
+  doc: { line(n: number): { from: number } },
 ): DecorationSet {
   const builder = new RangeSetBuilder<Decoration>();
   const marks: { from: number; to: number; cls: string }[] = [];
@@ -70,14 +90,14 @@ function buildDecorations(
   let char = 0;
 
   for (const token of tokens) {
-    line += token.delta_line;
-    if (token.delta_line > 0) {
-      char = token.delta_start;
+    line += token.deltaLine;
+    if (token.deltaLine > 0) {
+      char = token.deltaStart;
     } else {
-      char += token.delta_start;
+      char += token.deltaStart;
     }
 
-    const cls = TOKEN_CLASSES[token.token_type];
+    const cls = TOKEN_CLASSES[token.tokenType];
     if (!cls) continue;
 
     // LSP lines are 0-indexed, CodeMirror lines are 1-indexed
@@ -87,7 +107,7 @@ function buildDecorations(
 
     // Add defaultLibrary modifier class
     const fullCls =
-      token.token_modifiers_bitset & 1
+      token.tokenModifiersBitset & 1
         ? `${cls} cmt-standard`
         : cls;
 
@@ -103,72 +123,36 @@ function buildDecorations(
   return builder.finish();
 }
 
-// ─── View plugin that requests tokens from the worker ──────────────────────
+// ─── View plugin that listens for pushed tokens from the worker ────────────
 
 function semanticHighlightPlugin(worker: Worker) {
-  let pending = false;
-  let generation = 0;
-
   return ViewPlugin.fromClass(
     class {
+      private handler: (event: MessageEvent) => void;
+
       constructor(private view: EditorView) {
-        this.requestTokens();
-      }
-
-      update(update: ViewUpdate) {
-        if (update.docChanged) {
-          this.requestTokens();
-        }
-      }
-
-      private requestTokens() {
-        generation++;
-        const gen = generation;
-
-        // Debounce
-        if (pending) return;
-        pending = true;
-
-        setTimeout(() => {
-          pending = false;
-          if (gen !== generation) {
-            // Doc changed again, skip this request
-            this.requestTokens();
-            return;
-          }
-          this.doRequest(gen);
-        }, 100);
-      }
-
-      private doRequest(gen: number) {
-        const id = `sem-${gen}`;
-        const uri = "file:///cel.cel";
-
-        const handler = (event: MessageEvent) => {
+        this.handler = (event: MessageEvent) => {
           const msg = event.data;
-          if (msg?.id !== id) return;
-          worker.removeEventListener("message", handler);
+          if (msg?.method !== "celsp/semanticTokens") return;
 
-          if (gen !== generation) return;
+          const result = msg.params?.tokens;
+          if (!result?.data || !Array.isArray(result.data)) return;
 
-          const result = msg.result;
-          if (!result?.data) return;
-
-          const tokens: SemanticTokenData[] = result.data;
+          const tokens = decodeTokenData(result.data as number[]);
           const decorations = buildDecorations(tokens, this.view.state.doc);
           this.view.dispatch({ effects: setTokens.of(decorations) });
         };
-
-        worker.addEventListener("message", handler);
-        worker.postMessage({
-          jsonrpc: "2.0",
-          id,
-          method: "textDocument/semanticTokens/full",
-          params: { textDocument: { uri } },
-        });
+        worker.addEventListener("message", this.handler);
       }
 
-      destroy() {}
+      update(_update: ViewUpdate) {
+        // No need to request tokens — the worker pushes them after
+        // every didOpen/didChange notification from the LSP client.
+      }
+
+      destroy() {
+        worker.removeEventListener("message", this.handler);
+      }
     },
   );
 }
@@ -191,7 +175,7 @@ const semanticTheme = EditorView.baseTheme({
 
 /**
  * Create a CodeMirror extension for CEL semantic token highlighting.
- * Communicates directly with the worker to request tokens.
+ * Listens for worker-pushed `celsp/semanticTokens` notifications.
  */
 export function celSemanticHighlighting(worker: Worker) {
   return [tokenDecorations, semanticHighlightPlugin(worker), semanticTheme];

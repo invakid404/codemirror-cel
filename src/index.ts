@@ -68,6 +68,11 @@ export async function cel(config: CelConfig): Promise<Extension[]> {
     client,
     documentUri,
     languageId,
+    allowHTMLContent: true,
+    // Our WASM server uses full document sync (TextDocumentSyncKind::FULL).
+    // The CM LSP plugin defaults to incremental changes, which causes the
+    // server to treat partial change text as the entire document.
+    sendIncrementalChanges: false,
   });
 
   return [

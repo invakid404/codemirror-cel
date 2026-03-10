@@ -60,6 +60,26 @@ self.addEventListener("message", async (event: MessageEvent) => {
   if (response.method) {
     // Server-initiated notification — send it to the main thread.
     self.postMessage(response);
+
+    // Proactively push semantic tokens alongside diagnostics so that the
+    // highlight extension doesn't need to make a separate request that
+    // races with didOpen.
+    if (
+      message.method === "textDocument/didOpen" ||
+      message.method === "textDocument/didChange"
+    ) {
+      const uri =
+        message.params?.textDocument?.uri ?? "file:///cel.cel";
+      const tokensJson = analyzer!.semantic_tokens(uri);
+      if (tokensJson && tokensJson !== "null") {
+        const tokens = JSON.parse(tokensJson);
+        self.postMessage({
+          jsonrpc: "2.0",
+          method: "celsp/semanticTokens",
+          params: { uri, tokens },
+        });
+      }
+    }
     return;
   }
 
