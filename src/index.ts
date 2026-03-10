@@ -1,6 +1,7 @@
 import { LanguageServerClient, languageServerWithClient } from "@marimo-team/codemirror-languageserver";
 import type { Extension } from "@codemirror/state";
 import { WorkerTransport } from "./transport.ts";
+import { celSemanticHighlighting } from "./highlight.ts";
 
 // ─── Public configuration ───────────────────────────────────────────────────
 
@@ -63,11 +64,18 @@ export async function cel(config: CelConfig): Promise<Extension[]> {
   await client.initializePromise;
 
   // Build and return the CodeMirror extension array.
-  return languageServerWithClient({
+  const lspExtensions = languageServerWithClient({
     client,
     documentUri,
     languageId,
   });
+
+  return [
+    ...lspExtensions,
+    // Semantic token highlighting — talks to the worker directly since
+    // @marimo-team/codemirror-languageserver doesn't support semantic tokens.
+    ...celSemanticHighlighting(worker),
+  ];
 }
 
 // ─── Re-exports for advanced usage ──────────────────────────────────────────

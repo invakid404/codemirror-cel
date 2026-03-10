@@ -3,9 +3,7 @@ import { EditorState } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 import { cel } from "../src/index.ts";
 
-const SAMPLE_CEL = `// Try typing a dot after "name" or pressing Ctrl+Space
-user.name.startsWith("admin") && age >= 21
-`;
+const SAMPLE_CEL = `"hello world".startsWith("hello") && size("test") > 2`;
 
 const status = document.getElementById("status")!;
 
