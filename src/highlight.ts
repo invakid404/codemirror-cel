@@ -4,6 +4,10 @@
  * Listens for `celsp/semanticTokens` notifications pushed by the worker
  * (sent proactively after didOpen/didChange) and applies CodeMirror
  * Decorations — bypassing the LSP client which doesn't support semantic tokens.
+ *
+ * Integrates with CM6's tag-based highlighting system via `highlightingFor()`,
+ * so tokens are styled by whatever `HighlightStyle` the consumer has active
+ * (e.g. oneDark, defaultHighlightStyle, or a custom theme).
  */
 
 import {
@@ -13,22 +17,29 @@ import {
   ViewPlugin,
   type ViewUpdate,
 } from "@codemirror/view";
-import { StateEffect, StateField } from "@codemirror/state";
+import { StateEffect, StateField, type EditorState } from "@codemirror/state";
 import { RangeSetBuilder } from "@codemirror/state";
+import { tags, type Tag } from "@lezer/highlight";
+import { highlightingFor } from "@codemirror/language";
 
-// ─── Token type → CSS class mapping ────────────────────────────────────────
+// ─── LSP token type → lezer Tag mapping ────────────────────────────────────
 
-/** Matches the legend order in semantic_tokens.rs */
-const TOKEN_CLASSES: Record<number, string> = {
-  0: "cmt-keyword",      // keyword (true, false, null)
-  1: "cmt-number",       // number
-  2: "cmt-string",       // string
-  3: "cmt-operator",     // operator
-  4: "cmt-variableName", // variable
-  5: "cmt-function",     // function
-  6: "cmt-method",       // method
-  7: "cmt-punctuation",  // punctuation
-};
+/**
+ * Maps LSP semantic token type indices to lezer Tag arrays.
+ * Indices match the legend order in `semantic_tokens.rs`:
+ *   0=keyword, 1=number, 2=string, 3=operator,
+ *   4=variable, 5=function, 6=method, 7=punctuation
+ */
+const TOKEN_TAGS: readonly (readonly Tag[])[] = [
+  [tags.keyword],                     // 0: keyword (true, false, null)
+  [tags.number],                      // 1: number
+  [tags.string],                      // 2: string
+  [tags.operator],                    // 3: operator
+  [tags.variableName],                // 4: variable
+  [tags.function(tags.variableName)], // 5: function
+  [tags.function(tags.propertyName)], // 6: method
+  [tags.punctuation],                 // 7: punctuation
+];
 
 // ─── State management ──────────────────────────────────────────────────────
 
@@ -82,9 +93,11 @@ const tokenDecorations = StateField.define<DecorationSet>({
 function buildDecorations(
   tokens: SemanticTokenData[],
   doc: { line(n: number): { from: number } },
+  state: EditorState,
 ): DecorationSet {
   const builder = new RangeSetBuilder<Decoration>();
   const marks: { from: number; to: number; cls: string }[] = [];
+  const decoCache = new Map<string, Decoration>();
 
   let line = 0;
   let char = 0;
@@ -97,7 +110,16 @@ function buildDecorations(
       char += token.deltaStart;
     }
 
-    const cls = TOKEN_CLASSES[token.tokenType];
+    let tagList = TOKEN_TAGS[token.tokenType];
+    if (!tagList) continue;
+
+    // Apply the standard() modifier for defaultLibrary tokens
+    if (token.tokenModifiersBitset & 1) {
+      tagList = tagList.map((t) => tags.standard(t));
+    }
+
+    // Query the active theme's highlighters for the CSS class
+    const cls = highlightingFor(state, tagList);
     if (!cls) continue;
 
     // LSP lines are 0-indexed, CodeMirror lines are 1-indexed
@@ -105,19 +127,18 @@ function buildDecorations(
     const from = lineInfo.from + char;
     const to = from + token.length;
 
-    // Add defaultLibrary modifier class
-    const fullCls =
-      token.tokenModifiersBitset & 1
-        ? `${cls} cmt-standard`
-        : cls;
-
-    marks.push({ from, to, cls: fullCls });
+    marks.push({ from, to, cls });
   }
 
   // RangeSetBuilder requires sorted ranges
   marks.sort((a, b) => a.from - b.from || a.to - b.to);
   for (const { from, to, cls } of marks) {
-    builder.add(from, to, Decoration.mark({ class: cls }));
+    let deco = decoCache.get(cls);
+    if (!deco) {
+      deco = Decoration.mark({ class: cls });
+      decoCache.set(cls, deco);
+    }
+    builder.add(from, to, deco);
   }
 
   return builder.finish();
@@ -139,7 +160,11 @@ function semanticHighlightPlugin(worker: Worker) {
           if (!result?.data || !Array.isArray(result.data)) return;
 
           const tokens = decodeTokenData(result.data as number[]);
-          const decorations = buildDecorations(tokens, this.view.state.doc);
+          const decorations = buildDecorations(
+            tokens,
+            this.view.state.doc,
+            this.view.state,
+          );
           this.view.dispatch({ effects: setTokens.of(decorations) });
         };
         worker.addEventListener("message", this.handler);
@@ -157,26 +182,16 @@ function semanticHighlightPlugin(worker: Worker) {
   );
 }
 
-// ─── Default theme for semantic tokens ─────────────────────────────────────
-
-const semanticTheme = EditorView.baseTheme({
-  ".cmt-keyword": { color: "#c678dd" },
-  ".cmt-number": { color: "#d19a66" },
-  ".cmt-string": { color: "#98c379" },
-  ".cmt-operator": { color: "#56b6c2" },
-  ".cmt-variableName": { color: "#e06c75" },
-  ".cmt-function": { color: "#61afef" },
-  ".cmt-method": { color: "#61afef" },
-  ".cmt-punctuation": { color: "#abb2bf" },
-  ".cmt-standard": { fontStyle: "italic" },
-});
-
 // ─── Public API ────────────────────────────────────────────────────────────
 
 /**
  * Create a CodeMirror extension for CEL semantic token highlighting.
- * Listens for worker-pushed `celsp/semanticTokens` notifications.
+ *
+ * Listens for worker-pushed `celsp/semanticTokens` notifications and applies
+ * decorations using classes from the active `HighlightStyle`. The consumer
+ * must have a `syntaxHighlighting(...)` extension installed (e.g. `oneDark`,
+ * `defaultHighlightStyle`) for tokens to be styled.
  */
 export function celSemanticHighlighting(worker: Worker) {
-  return [tokenDecorations, semanticHighlightPlugin(worker), semanticTheme];
+  return [tokenDecorations, semanticHighlightPlugin(worker)];
 }

@@ -23,6 +23,7 @@
     "@codemirror/lint": "^6.9.5",
     "@codemirror/state": "^6.5.4",
     "@codemirror/stream-parser": "^0.19.9",
+    "@codemirror/theme-one-dark": "^6.1.3",
     "@codemirror/view": "^6.39.17",
     "@marimo-team/codemirror-languageserver": "^1.16.12",
     "@open-rpc/client-js": "^1.8.1",

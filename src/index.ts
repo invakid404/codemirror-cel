@@ -1,6 +1,5 @@
 import { LanguageServerClient, languageServerWithClient } from "@marimo-team/codemirror-languageserver";
 import type { Extension } from "@codemirror/state";
-import { EditorView } from "@codemirror/view";
 import { WorkerTransport } from "./transport.ts";
 import { celSemanticHighlighting } from "./highlight.ts";
 
@@ -81,64 +80,10 @@ export async function cel(config: CelConfig): Promise<Extension[]> {
     ...lspExtensions,
     // Semantic token highlighting — talks to the worker directly since
     // @marimo-team/codemirror-languageserver doesn't support semantic tokens.
+    // Tokens are styled by whatever HighlightStyle the consumer has active.
     ...celSemanticHighlighting(worker),
-    // Dark theme for autocomplete & tooltip UI
-    lspTooltipTheme,
   ];
 }
-
-// ─── Dark theme for LSP tooltips & autocomplete ────────────────────────────
-
-const lspTooltipTheme = EditorView.theme({
-  // Autocomplete dropdown
-  ".cm-tooltip.cm-tooltip-autocomplete": {
-    backgroundColor: "#1e1e1e",
-    border: "1px solid #3c3c3c",
-    color: "#d4d4d4",
-  },
-  ".cm-tooltip-autocomplete ul li": {
-    color: "#d4d4d4",
-  },
-  ".cm-tooltip-autocomplete ul li[aria-selected]": {
-    backgroundColor: "#094771",
-    color: "#ffffff",
-  },
-  ".cm-completionDetail": {
-    color: "#9d9d9d",
-    fontStyle: "italic",
-  },
-  // Documentation tooltip (info panel next to autocomplete)
-  ".cm-completionInfo": {
-    backgroundColor: "#252526",
-    border: "1px solid #3c3c3c",
-    color: "#d4d4d4",
-  },
-  ".cm-completionInfo .documentation": {
-    color: "#d4d4d4",
-  },
-  ".cm-completionInfo .documentation p": {
-    color: "#d4d4d4",
-  },
-  ".cm-completionInfo .documentation code": {
-    backgroundColor: "#1e1e1e",
-    color: "#ce9178",
-    padding: "1px 4px",
-    borderRadius: "3px",
-  },
-  // Hover & diagnostic tooltips
-  ".cm-tooltip": {
-    backgroundColor: "#252526",
-    border: "1px solid #3c3c3c",
-    color: "#d4d4d4",
-  },
-  ".cm-tooltip code": {
-    backgroundColor: "#1e1e1e",
-    color: "#ce9178",
-  },
-  ".cm-lsp-hover-tooltip": {
-    color: "#d4d4d4",
-  },
-});
 
 // ─── Re-exports for advanced usage ──────────────────────────────────────────
 

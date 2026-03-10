@@ -1,6 +1,7 @@
 import { basicSetup } from "codemirror";
 import { EditorState } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
+import { oneDark } from "@codemirror/theme-one-dark";
 import { cel } from "../src/index.ts";
 
 const SAMPLE_CEL = `"hello world".startsWith("hello") && "test".size() > 2`;
@@ -21,14 +22,7 @@ async function main() {
         extensions: [
           basicSetup,
           ...celExtensions,
-          EditorView.theme({
-            "&": { backgroundColor: "#1a1a1a" },
-            ".cm-content": { caretColor: "#fff" },
-            ".cm-gutters": {
-              backgroundColor: "#1a1a1a",
-              borderRight: "1px solid #333",
-            },
-          }),
+          oneDark,
         ],
       }),
     });

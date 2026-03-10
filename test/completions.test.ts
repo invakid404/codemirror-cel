@@ -50,33 +50,38 @@ test.afterAll(async () => {
   }
 });
 
-test("semantic highlighting applies token classes", async ({ page }) => {
+test("semantic highlighting applies styled spans", async ({ page }) => {
   await page.goto("http://localhost:3000");
   await page.waitForSelector(".cm-editor", { timeout: 10000 });
   await page.waitForSelector("#status:has-text('Ready')", { timeout: 10000 });
   // Wait for semantic tokens to arrive from worker
   await page.waitForTimeout(2000);
 
-  // Check that semantic token classes exist in the editor
-  const tokenClasses = await page.evaluate(() => {
+  // Check that styled spans exist in the editor content.
+  // With highlightingFor() + a HighlightStyle (oneDark), the class names
+  // are auto-generated (e.g. "ͼ1a"). We verify that spans have classes
+  // and that at least some have distinct computed colors (not all the same).
+  const colorInfo = await page.evaluate(() => {
     const editor = document.querySelector(".cm-content");
-    if (!editor) return [];
+    if (!editor) return { spanCount: 0, uniqueColors: 0 };
     const spans = Array.from(editor.querySelectorAll("span[class]"));
-    const classes = new Set<string>();
+    const colors = new Set<string>();
     for (const span of spans) {
-      for (const cls of Array.from(span.classList)) {
-        if (cls.startsWith("cmt-")) classes.add(cls);
-      }
+      const style = window.getComputedStyle(span);
+      colors.add(style.color);
     }
-    return [...classes];
+    return { spanCount: spans.length, uniqueColors: colors.size };
   });
 
-  console.log("Semantic token classes found:", tokenClasses);
+  console.log(
+    `Spans: ${colorInfo.spanCount}, unique colors: ${colorInfo.uniqueColors}`,
+  );
   await page.screenshot({ path: "test/screenshots/01-highlighting.png" });
 
-  // The demo expression has strings, operators, methods, booleans — expect some token classes
-  expect(tokenClasses.length).toBeGreaterThan(0);
-  expect(tokenClasses).toContain("cmt-string");
+  // The demo expression has strings, operators, methods, booleans — expect
+  // multiple styled spans with more than one distinct color.
+  expect(colorInfo.spanCount).toBeGreaterThan(0);
+  expect(colorInfo.uniqueColors).toBeGreaterThan(1);
 });
 
 test("typing 'al' should keep 'all' in completions", async ({ page }) => {
