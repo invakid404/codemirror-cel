@@ -81,7 +81,7 @@ export async function cel(config: CelConfig): Promise<Extension[]> {
     // Semantic token highlighting — talks to the worker directly since
     // @marimo-team/codemirror-languageserver doesn't support semantic tokens.
     // Tokens are styled by whatever HighlightStyle the consumer has active.
-    ...celSemanticHighlighting(worker),
+    ...celSemanticHighlighting(worker, documentUri),
   ];
 }
 

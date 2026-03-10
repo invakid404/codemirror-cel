@@ -10,9 +10,13 @@ import type { JSONRPCRequestData } from "@open-rpc/client-js/build/Request";
  * Requests are serialized as JSON and sent via `worker.postMessage()`.
  * Responses and server-initiated notifications arrive as `message`
  * events on the worker.
+ *
+ * The transport does NOT own the worker — `close()` only detaches
+ * listeners. The consumer is responsible for worker lifecycle.
  */
 export class WorkerTransport extends Transport {
   private worker: Worker;
+  private listener: ((event: MessageEvent) => void) | null = null;
 
   constructor(worker: Worker) {
     super();
@@ -25,14 +29,18 @@ export class WorkerTransport extends Transport {
    * transport's request manager for resolution.
    */
   async connect(): Promise<void> {
-    this.worker.addEventListener("message", (event: MessageEvent) => {
+    // Guard against double-connect leaking listeners.
+    if (this.listener) return;
+
+    this.listener = (event: MessageEvent) => {
       const data = event.data;
       // resolveResponse expects a JSON string payload.
       // The worker sends structured objects, so we serialize them.
       this.transportRequestManager.resolveResponse(
         typeof data === "string" ? data : JSON.stringify(data),
       );
-    });
+    };
+    this.worker.addEventListener("message", this.listener);
   }
 
   /**
@@ -60,9 +68,14 @@ export class WorkerTransport extends Transport {
   }
 
   /**
-   * Terminate the worker and clean up.
+   * Detach the message listener from the worker.
+   *
+   * Does NOT terminate the worker — the consumer owns its lifecycle.
    */
   close(): void {
-    this.worker.terminate();
+    if (this.listener) {
+      this.worker.removeEventListener("message", this.listener);
+      this.listener = null;
+    }
   }
 }

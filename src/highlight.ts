@@ -146,7 +146,7 @@ function buildDecorations(
 
 // ─── View plugin that listens for pushed tokens from the worker ────────────
 
-function semanticHighlightPlugin(worker: Worker) {
+function semanticHighlightPlugin(worker: Worker, documentUri: string) {
   return ViewPlugin.fromClass(
     class {
       private handler: (event: MessageEvent) => void;
@@ -155,6 +155,10 @@ function semanticHighlightPlugin(worker: Worker) {
         this.handler = (event: MessageEvent) => {
           const msg = event.data;
           if (msg?.method !== "celsp/semanticTokens") return;
+
+          // Ignore tokens for other documents (e.g. if multiple editors
+          // share the same worker).
+          if (msg.params?.uri !== documentUri) return;
 
           const result = msg.params?.tokens;
           if (!result?.data || !Array.isArray(result.data)) return;
@@ -191,7 +195,10 @@ function semanticHighlightPlugin(worker: Worker) {
  * decorations using classes from the active `HighlightStyle`. The consumer
  * must have a `syntaxHighlighting(...)` extension installed (e.g. `oneDark`,
  * `defaultHighlightStyle`) for tokens to be styled.
+ *
+ * @param worker - The worker running the celsp WASM server.
+ * @param documentUri - Only apply tokens for this document URI.
  */
-export function celSemanticHighlighting(worker: Worker) {
-  return [tokenDecorations, semanticHighlightPlugin(worker)];
+export function celSemanticHighlighting(worker: Worker, documentUri: string) {
+  return [tokenDecorations, semanticHighlightPlugin(worker, documentUri)];
 }
