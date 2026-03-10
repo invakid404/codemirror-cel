@@ -3,6 +3,9 @@
  *
  * Receives JSON-RPC LSP requests from the main thread via postMessage,
  * delegates them to the CelAnalyzer WASM module, and sends responses back.
+ *
+ * The worker expects a `{ type: "celsp/init", options }` message before
+ * any JSON-RPC traffic. The options are forwarded to `CelAnalyzer::new()`.
  */
 
 import init, { CelAnalyzer } from "../crates/celsp/pkg/celsp.js";
@@ -11,14 +14,23 @@ let analyzer: CelAnalyzer | null = null;
 
 /**
  * Initialize the WASM module and create the CelAnalyzer instance.
- * Called once when the worker starts.
+ * Waits for the init message carrying analyzer options.
  */
-async function initialize(): Promise<void> {
-  await init();
-  analyzer = new CelAnalyzer();
-}
+const ready = new Promise<void>((resolve) => {
+  const onInit = async (event: MessageEvent) => {
+    const msg = event.data;
+    if (msg?.type !== "celsp/init") return;
 
-const ready = initialize();
+    self.removeEventListener("message", onInit);
+
+    await init();
+    analyzer = new CelAnalyzer(JSON.stringify(msg.options ?? {}));
+
+    resolve();
+  };
+
+  self.addEventListener("message", onInit);
+});
 
 // ─── Message listener ───────────────────────────────────────────────────────
 
@@ -27,6 +39,9 @@ self.addEventListener("message", async (event: MessageEvent) => {
   await ready;
 
   const message = event.data;
+
+  // Ignore our own init message (already handled above).
+  if (message?.type === "celsp/init") return;
 
   // Validate basic JSON-RPC structure.
   if (!message || message.jsonrpc !== "2.0" || !message.method) {

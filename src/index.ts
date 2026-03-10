@@ -2,6 +2,7 @@ import { LanguageServerClient, languageServerWithClient } from "@marimo-team/cod
 import type { Extension } from "@codemirror/state";
 import { WorkerTransport } from "./transport.ts";
 import { celSemanticHighlighting } from "./highlight.ts";
+import type { AnalyzerOptions, FunctionDeclaration, VariableDeclaration } from "./types.ts";
 
 // ─── Public configuration ───────────────────────────────────────────────────
 
@@ -17,6 +18,20 @@ export interface CelConfig {
 
   /** Language ID sent to the LSP server. Defaults to "cel". */
   languageId?: string;
+
+  /** Variable declarations available in the CEL environment. */
+  variables?: VariableDeclaration[];
+
+  /** Function declarations (type signatures only) for the CEL type-checker. */
+  functions?: FunctionDeclaration[];
+
+  /**
+   * Whether hover tooltips should include check-error details.
+   *
+   * Defaults to `false` because CM6 already shows diagnostics in the
+   * tooltip — displaying both produces duplicate error messages.
+   */
+  hoverShowErrors?: boolean;
 }
 
 // ─── Public API ─────────────────────────────────────────────────────────────
@@ -37,7 +52,7 @@ export interface CelConfig {
  *   { type: "module" },
  * );
  * const extensions = [
- *   ...(await cel({ worker })),
+ *   ...(await cel({ worker, variables: [{ name: "x", type: "int" }] })),
  * ];
  * ```
  */
@@ -47,7 +62,20 @@ export async function cel(config: CelConfig): Promise<Extension[]> {
     rootUri = "file:///",
     documentUri = "file:///cel.cel",
     languageId = "cel",
+    variables,
+    functions,
+    hoverShowErrors = false,
   } = config;
+
+  // Build analyzer options and send to the worker before connecting
+  // the LSP transport. The worker waits for this message before
+  // constructing the CelAnalyzer.
+  const analyzerOptions: AnalyzerOptions = {
+    variables,
+    functions,
+    hoverShowErrors,
+  };
+  worker.postMessage({ type: "celsp/init", options: analyzerOptions });
 
   // Create the transport that bridges postMessage ↔ JSON-RPC.
   const transport = new WorkerTransport(worker);
@@ -89,3 +117,13 @@ export async function cel(config: CelConfig): Promise<Extension[]> {
 
 export { WorkerTransport } from "./transport.ts";
 export type { CelConfig as CelLanguageConfig };
+export type {
+  AnalyzerOptions,
+  FunctionDeclaration,
+  VariableDeclaration,
+  CELType,
+  CELTypeDef,
+  CELListType,
+  CELMapType,
+  CELFunctionParam,
+} from "./types.ts";

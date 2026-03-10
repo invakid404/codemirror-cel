@@ -22,6 +22,7 @@
     "@playwright/test": "^1.58.2",
     "@types/bun": "latest",
     "codemirror": "^6.0.2",
-    "playwright": "^1.58.2"
+    "playwright": "^1.58.2",
+    "wasm-cel": "^0.3.0"
   }
 }
