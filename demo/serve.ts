@@ -21,7 +21,9 @@ Bun.serve({
       new Response(workerCode, {
         headers: { "Content-Type": "application/javascript" },
       }),
-    "/wasm/celsp_wasm_bg.wasm": () =>
+    // The bundled worker's init() resolves the WASM path relative to
+    // import.meta.url (/worker.js), so it fetches /celsp_wasm_bg.wasm.
+    "/celsp_wasm_bg.wasm": () =>
       new Response(Bun.file(wasmPath), {
         headers: { "Content-Type": "application/wasm" },
       }),
