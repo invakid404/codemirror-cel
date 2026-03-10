@@ -61,10 +61,10 @@ test("semantic highlighting applies token classes", async ({ page }) => {
   const tokenClasses = await page.evaluate(() => {
     const editor = document.querySelector(".cm-content");
     if (!editor) return [];
-    const spans = editor.querySelectorAll("span[class]");
+    const spans = Array.from(editor.querySelectorAll("span[class]"));
     const classes = new Set<string>();
     for (const span of spans) {
-      for (const cls of span.classList) {
+      for (const cls of Array.from(span.classList)) {
         if (cls.startsWith("cmt-")) classes.add(cls);
       }
     }

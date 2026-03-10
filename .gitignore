@@ -36,3 +36,7 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 # Rust
 target/
 crates/celsp-wasm/pkg/
+
+# Test artifacts
+test-results/
+test/screenshots/
