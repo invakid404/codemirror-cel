@@ -1,0 +1,17 @@
+{
+  "name": "codemirror-cel",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@codemirror/language": "^6.12.2",
+    "@marimo-team/codemirror-languageserver": "^1.16.12",
+    "@open-rpc/client-js": "^1.8.1"
+  }
+}
