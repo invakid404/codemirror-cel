@@ -5,8 +5,8 @@ import { WorkerTransport } from "./transport.ts";
 // ─── Public configuration ───────────────────────────────────────────────────
 
 export interface CelConfig {
-  /** URL to the celsp WASM module. */
-  wasmUrl: string;
+  /** A Web Worker running the celsp WASM language server. */
+  worker: Worker;
 
   /** Root URI for the LSP workspace. Defaults to "file:///". */
   rootUri?: string;
@@ -31,25 +31,22 @@ export interface CelConfig {
  * ```ts
  * import { cel } from "codemirror-cel";
  *
+ * const worker = new Worker(
+ *   new URL("codemirror-cel/worker", import.meta.url),
+ *   { type: "module" },
+ * );
  * const extensions = [
- *   ...(await cel({ wasmUrl: "/wasm/celsp.wasm" })),
+ *   ...(await cel({ worker })),
  * ];
  * ```
  */
 export async function cel(config: CelConfig): Promise<Extension[]> {
   const {
+    worker,
     rootUri = "file:///",
     documentUri = "file:///cel.cel",
     languageId = "cel",
   } = config;
-
-  // Create a Web Worker from the worker module.
-  // The `new URL(...)` pattern is recognized by bundlers (webpack, vite, esbuild)
-  // for proper asset handling and code splitting.
-  const worker = new Worker(
-    new URL("./worker.ts", import.meta.url),
-    { type: "module" },
-  );
 
   // Create the transport that bridges postMessage ↔ JSON-RPC.
   const transport = new WorkerTransport(worker);

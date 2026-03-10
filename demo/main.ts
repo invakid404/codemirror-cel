@@ -11,9 +11,8 @@ const status = document.getElementById("status")!;
 
 async function main() {
   try {
-    const celExtensions = await cel({
-      wasmUrl: "/wasm/celsp_wasm_bg.wasm",
-    });
+    const worker = new Worker("/worker.js", { type: "module" });
+    const celExtensions = await cel({ worker });
 
     status.textContent = "Ready";
 
