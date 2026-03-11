@@ -109,9 +109,10 @@ Functions declare parameter names, types, and a return type:
 
 ## How it works
 
-The extension runs [celsp](https://github.com/invakid404/celsp) — a CEL language server
-written in Rust — compiled to WebAssembly inside a Web Worker. LSP messages are bridged
-between the worker and CodeMirror via `postMessage`.
+The extension runs a [fork](https://github.com/invakid404/celsp) of
+[celsp](https://github.com/ponix-dev/celsp) by [ponix-dev](https://github.com/ponix-dev)
+— a CEL language server written in Rust — compiled to WebAssembly inside a Web Worker.
+LSP messages are bridged between the worker and CodeMirror via `postMessage`.
 
 Semantic highlighting is handled through a custom side-channel (since the upstream
 CodeMirror LSP plugin doesn't support semantic tokens) and integrates with whatever
