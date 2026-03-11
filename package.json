@@ -46,7 +46,7 @@
     "build:wasm": "wasm-pack build --target web --release crates/celsp && wasm-opt --all-features -Oz crates/celsp/pkg/celsp_bg.wasm -o crates/celsp/pkg/celsp_bg.wasm",
     "check": "bun tsc --noEmit",
     "demo": "bun --hot demo/serve.ts",
-    "prepublishOnly": "bun run build"
+    "prepublishOnly": "bun run build:wasm && bun run build"
   },
   "dependencies": {
     "@marimo-team/codemirror-languageserver": "^1.16.12",
