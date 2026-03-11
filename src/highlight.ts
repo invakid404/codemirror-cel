@@ -149,9 +149,9 @@ function buildDecorations(
 function semanticHighlightPlugin(worker: Worker, documentUri: string) {
   return ViewPlugin.fromClass(
     class {
-      private handler: (event: MessageEvent) => void;
+      handler: (event: MessageEvent) => void;
 
-      constructor(private view: EditorView) {
+      constructor(public view: EditorView) {
         this.handler = (event: MessageEvent) => {
           const msg = event.data;
           if (msg?.method !== "celsp/semanticTokens") return;

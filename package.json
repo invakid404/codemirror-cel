@@ -1,15 +1,56 @@
 {
   "name": "codemirror-cel",
-  "module": "index.ts",
+  "version": "0.1.0",
+  "description": "CodeMirror 6 extension for CEL (Common Expression Language) with LSP-powered diagnostics, autocompletion, hover, and semantic highlighting via a WASM language server.",
   "type": "module",
-  "private": true,
+  "license": "Unlicense",
+  "author": "invakid404",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/invakid404/codemirror-cel.git"
+  },
+  "homepage": "https://invakid404.github.io/codemirror-cel",
+  "bugs": {
+    "url": "https://github.com/invakid404/codemirror-cel/issues"
+  },
+  "keywords": [
+    "codemirror",
+    "codemirror6",
+    "cel",
+    "common-expression-language",
+    "editor",
+    "lsp",
+    "language-server",
+    "wasm",
+    "syntax-highlighting",
+    "autocompletion",
+    "diagnostics"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./worker": {
+      "types": "./dist/worker.d.ts",
+      "import": "./dist/worker.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "demo": "bun --hot demo/serve.ts",
+    "build": "bun scripts/build.ts",
     "build:wasm": "wasm-pack build --target web --release crates/celsp && wasm-opt --all-features -Oz crates/celsp/pkg/celsp_bg.wasm -o crates/celsp/pkg/celsp_bg.wasm",
-    "check": "bunx tsc --noEmit"
+    "check": "bun tsc --noEmit",
+    "demo": "bun --hot demo/serve.ts",
+    "prepublishOnly": "bun run build"
   },
   "dependencies": {
-    "@marimo-team/codemirror-languageserver": "^1.16.12"
+    "@marimo-team/codemirror-languageserver": "^1.16.12",
+    "wasm-cel": "^0.3.0"
   },
   "peerDependencies": {
     "@codemirror/language": "^6.0.0",
@@ -22,7 +63,6 @@
     "@playwright/test": "^1.58.2",
     "@types/bun": "latest",
     "codemirror": "^6.0.2",
-    "playwright": "^1.58.2",
-    "wasm-cel": "^0.3.0"
+    "playwright": "^1.58.2"
   }
 }

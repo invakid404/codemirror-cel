@@ -40,3 +40,6 @@ crates/celsp-wasm/pkg/
 # Test artifacts
 test-results/
 test/screenshots/
+
+# Demo build output
+demo-dist/

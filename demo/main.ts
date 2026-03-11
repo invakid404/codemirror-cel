@@ -52,7 +52,7 @@ const status = document.getElementById("status")!;
 
 async function main() {
   try {
-    const worker = new Worker("/worker.js", { type: "module" });
+    const worker = new Worker("./worker.js", { type: "module" });
     const celExtensions = await cel({
       worker,
       variables,
