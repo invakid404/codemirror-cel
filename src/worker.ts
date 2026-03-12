@@ -9,6 +9,7 @@
  */
 
 import init, { CelAnalyzer } from "../crates/celsp/pkg/celsp.js";
+import { normalizeAnalyzerOptions } from "./types.ts";
 
 let analyzer: CelAnalyzer | null = null;
 
@@ -24,7 +25,9 @@ const ready = new Promise<void>((resolve) => {
     self.removeEventListener("message", onInit);
 
     await init();
-    analyzer = new CelAnalyzer(JSON.stringify(msg.options ?? {}));
+    analyzer = new CelAnalyzer(
+      JSON.stringify(normalizeAnalyzerOptions(msg.options ?? {})),
+    );
 
     resolve();
   };

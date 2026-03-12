@@ -125,5 +125,6 @@ export type {
   CELTypeDef,
   CELListType,
   CELMapType,
+  CELOptionalType,
   CELFunctionParam,
 } from "./types.ts";

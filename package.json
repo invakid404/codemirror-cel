@@ -50,7 +50,7 @@
   },
   "dependencies": {
     "@marimo-team/codemirror-languageserver": "^1.16.12",
-    "wasm-cel": "^0.3.0"
+    "wasm-cel": "0.5.1"
   },
   "peerDependencies": {
     "@codemirror/language": "^6.0.0",
