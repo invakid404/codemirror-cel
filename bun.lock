@@ -6,6 +6,7 @@
       "name": "codemirror-cel",
       "dependencies": {
         "@marimo-team/codemirror-languageserver": "^1.16.12",
+        "wasm-cel": "0.5.1",
       },
       "devDependencies": {
         "@codemirror/theme-one-dark": "^6.1.3",
@@ -13,7 +14,6 @@
         "@types/bun": "latest",
         "codemirror": "^6.0.2",
         "playwright": "^1.58.2",
-        "wasm-cel": "^0.3.0",
       },
       "peerDependencies": {
         "@codemirror/language": "^6.0.0",
@@ -94,7 +94,7 @@
 
     "w3c-keyname": ["w3c-keyname@2.2.8", "", {}, "sha512-dpojBhNsCNN7T82Tm7k26A6G9ML3NkhDsnw9n/eoxSRlVBB4CEtIQ/KTCLI2Fwf3ataSXRhYFkQi3SlnFwPvPQ=="],
 
-    "wasm-cel": ["wasm-cel@0.3.0", "", {}, "sha512-Z2AY4b21680LhtYFP0zBDK9NNqxqFYmVO6ZtklWIaP2Mzjxy+HBqKKGdws3XCBaIXFgJ92NZ+fMqd0c6FH6V3A=="],
+    "wasm-cel": ["wasm-cel@0.5.1", "", {}, "sha512-qV4vYrIdQKSUpd8z+SicsAWuWK0BtJP7AwBTo7VnG6XRd4kZSAjWW2E+dVIF1VEnYUSijRG2bWYblkgtP6UnAg=="],
 
     "webidl-conversions": ["webidl-conversions@3.0.1", "", {}, "sha512-2JAn3z8AR6rjK8Sm8orRC0h/bcl/DqL7tRPdGZ4I1CjdF+EaMLmYxBHyXuKL849eucPFhvBoxMsflfOb8kxaeQ=="],
 
