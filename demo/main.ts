@@ -4,6 +4,7 @@ import { EditorView } from "@codemirror/view";
 import { oneDark } from "@codemirror/theme-one-dark";
 import { cel } from "../src/index.ts";
 import type { VariableDeclaration, FunctionDeclaration } from "../src/types.ts";
+import { optionalType } from "wasm-cel";
 
 // ─── Environment: variables available in CEL expressions ────────────────────
 
@@ -12,6 +13,7 @@ const variables: VariableDeclaration[] = [
   { name: "request", type: { kind: "map", keyType: "string", valueType: "dyn" } },
   { name: "now", type: "timestamp" },
   { name: "labels", type: { kind: "list", elementType: "string" } },
+  { name: "nickname", type: optionalType("string") },
   { name: "threshold", type: "double" },
 ];
 
@@ -43,6 +45,7 @@ const functions: FunctionDeclaration[] = [
 
 const SAMPLE_CEL = `user.email.endsWith("@acme.com")
   && isEmail(user.email)
+  && nickname.hasValue()
   && clamp(request.score, 0.0, threshold) > 0.5
   && labels.exists(l, l.startsWith("prod"))`;
 
