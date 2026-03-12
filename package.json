@@ -1,6 +1,6 @@
 {
   "name": "codemirror-cel",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "CodeMirror 6 extension for CEL (Common Expression Language) with LSP-powered diagnostics, autocompletion, hover, and semantic highlighting via a WASM language server.",
   "type": "module",
   "license": "Unlicense",
@@ -38,9 +38,7 @@
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "files": [
-    "dist"
-  ],
+  "files": ["dist"],
   "scripts": {
     "build": "bun scripts/build.ts",
     "build:wasm": "wasm-pack build --target web --release crates/celsp && wasm-opt --all-features -Oz crates/celsp/pkg/celsp_bg.wasm -o crates/celsp/pkg/celsp_bg.wasm",
