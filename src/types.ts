@@ -111,6 +111,10 @@ export interface SerializedAnalyzerOptions {
   hoverShowErrors?: boolean;
 }
 
+function assertNever(value: never): never {
+  throw new Error(`Unhandled CEL type: ${JSON.stringify(value)}`);
+}
+
 export function toCelspTypeString(type: CELTypeDef | CELType): string {
   if (typeof type === "string") return type;
   if (!type || typeof type !== "object" || !("kind" in type)) return "dyn";
@@ -122,9 +126,9 @@ export function toCelspTypeString(type: CELTypeDef | CELType): string {
       return `map(${toCelspTypeString(type.keyType)}, ${toCelspTypeString(type.valueType)})`;
     case "optional":
       return `optional(${toCelspTypeString(type.innerType)})`;
-    default:
-      return "dyn";
   }
+
+  return assertNever(type);
 }
 
 function serializeFunctionDeclaration(
